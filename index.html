@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReasonFusion — Claude × ChatGPT</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="theme-color" content="#1b1d21">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ReasonFusion">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<style>
+:root{color-scheme:light dark;--bg:light-dark(#f7f6f2,#14161a);--card:light-dark(#fff,#1d2026);--ink:light-dark(#1b1d21,#e9e9e6);--mut:light-dark(#62666e,#9aa0a8);--line:light-dark(#e2e0d8,#2c3038);
+--cl:#c2603d;--gp:#0f8a74;--acc:light-dark(#2343d6,#8ea2ff);--bad:#d23c3c;--ok:#1f9d55}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif}
+header{padding:28px max(5vw,16px) 8px}
+h1{font-size:clamp(28px,5vw,44px);line-height:1.05;margin:0 0 6px;letter-spacing:-.02em}
+h1 .c{color:var(--cl)}h1 .g{color:var(--gp)}
+.sub{color:var(--mut);max-width:70ch;margin:0}
+main{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:24px;padding:16px max(5vw,16px) 48px;max-width:1400px}
+@media(max-width:900px){main{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+label{display:block;font-size:13px;font-weight:600;margin:12px 0 4px}
+input,textarea,select{width:100%;font:16px Inter,sans-serif;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+textarea{min-height:120px;resize:vertical}
+input:focus,textarea:focus,select:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hint{font-size:13px;color:var(--mut);margin:4px 0 0}
+button{font:600 15px Inter,sans-serif;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.pri{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+details{margin-top:12px}summary{cursor:pointer;font-weight:600;font-size:14px}
+.chk{display:flex;gap:8px;align-items:center;font-size:14px;margin-top:10px}.chk input{width:auto}
+#stage{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.pill{font-size:13px;padding:4px 10px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
+.pill.on{border-color:var(--acc);color:var(--acc);font-weight:600}.pill.done{color:var(--ok);border-color:var(--ok)}
+#log{display:flex;flex-direction:column;gap:12px}
+.msg{border-radius:12px;padding:14px 16px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--mut)}
+.msg.claude{border-left-color:var(--cl)}.msg.gpt{border-left-color:var(--gp)}.msg.sys{border-left-color:var(--acc)}.msg.err{border-left-color:var(--bad)}
+.who{font-size:13px;font-weight:700;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
+.claude .who b{color:var(--cl)}.gpt .who b{color:var(--gp)}.sys .who b{color:var(--acc)}.err .who b{color:var(--bad)}
+.body{overflow-wrap:anywhere}.body pre{overflow-x:auto;background:var(--bg);padding:10px;border-radius:8px}
+.body table{border-collapse:collapse;display:block;overflow-x:auto}.body td,.body th{border:1px solid var(--line);padding:4px 8px}
+.msg.collapsed .body{max-height:220px;overflow:hidden;mask-image:linear-gradient(#000 70%,transparent)}
+.tog{font-size:13px;min-height:32px;padding:0 10px}
+#paperWrap{display:none;margin-top:24px}
+#paper{font-family:"Source Serif 4",Georgia,serif;font-size:17px;line-height:1.65;max-width:78ch}
+#paper h1{font-family:inherit;font-size:30px;line-height:1.15}#paper h2{font-size:22px;margin-top:1.6em}
+.refs li{margin-bottom:6px;font-size:15px}.v{color:var(--ok);font-weight:700;font-size:12px}.x{color:var(--bad)}
+.empty{color:var(--mut);text-align:center;padding:48px 12px}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:s 1s linear infinite;vertical-align:-1px}
+@keyframes s{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spin{animation:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="c">Claude</span> × <span class="g">ChatGPT</span> — ReasonFusion</h1>
+  <p class="sub">Give a problem. Both models work as field experts, critique each other's solutions over several rounds, then co-write a paper. Every reference is checked against Crossref and OpenAlex. A reference that can't be verified is dropped.</p>
+</header>
+<main>
+<section class="card" aria-label="Setup">
+  <label for="problem">Problem</label>
+  <textarea id="problem" placeholder="e.g. Design a lightweight scheme that lets IoT sensor gateways prove to an auditor that released aggregates satisfy ε-differential privacy, without revealing raw readings."></textarea>
+  <label for="field">Field / expertise</label>
+  <input id="field" placeholder="e.g. IoT security, differential privacy, applied cryptography">
+  <div class="row">
+    <div><label for="rounds">Max debate rounds</label><input id="rounds" type="number" min="1" max="8" value="4"></div>
+    <div><label for="writer">Lead author</label><select id="writer"><option value="claude">Claude</option><option value="gpt">ChatGPT</option></select></div>
+  </div>
+  <label for="dois">Must-use references (optional)</label>
+  <textarea id="dois" style="min-height:70px" placeholder="One DOI per line, e.g. 10.3390/s25xxxxx"></textarea>
+  <p class="hint">Each DOI is checked against Crossref, then added to the shared literature.</p>
+
+  <details open>
+    <summary>API keys and models</summary>
+    <label for="akey">Anthropic API key</label><input id="akey" type="password" autocomplete="off" placeholder="sk-ant-…">
+    <label for="amodel">Claude model</label><input id="amodel" value="claude-opus-5-5">
+    <label for="okey">OpenAI API key</label><input id="okey" type="password" autocomplete="off" placeholder="sk-…">
+    <label for="omodel">ChatGPT model</label><input id="omodel" value="gpt-6.1-terra">
+    <label for="mail">Your email (optional)</label><input id="mail" type="email" placeholder="Speeds up Crossref/OpenAlex">
+    <div class="chk"><input id="remember" type="checkbox"><label for="remember" style="margin:0;font-weight:400">Remember keys in this browser</label></div>
+    <p class="hint">Your keys go only to api.anthropic.com and api.openai.com, directly from this page. Each run makes about 15–30 API calls.</p>
+  </details>
+  <div class="btns">
+    <button class="pri" id="go">Start</button>
+    <button id="stop" disabled>Stop</button>
+  </div>
+</section>
+
+<section aria-label="Session">
+  <div id="stage"></div>
+  <div id="log"><div class="empty">The literature search, debate and paper drafting will show up here.</div></div>
+  <div id="paperWrap" class="card">
+    <div class="btns" style="margin-top:0;margin-bottom:12px">
+      <button id="cpy">Copy Markdown</button><button id="dlmd">Download .md</button><button id="dlbib">Download .bib</button><button id="dllog">Download transcript</button>
+    </div>
+    <article id="paper"></article>
+  </div>
+</section>
+</main>
+
+<script>
+{
+const $=id=>document.getElementById(id);
+const STAGES=['Literature','Debate','References','Draft','Review','Revise','Verify'];
+let ctl=null, S=null;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const md=t=>{try{return window.marked&&window.DOMPurify?DOMPurify.sanitize(marked.parse(t)):'<pre>'+esc(t)+'</pre>'}catch(e){return '<pre>'+esc(t)+'</pre>'}};
+const NAME={claude:'Claude',gpt:'ChatGPT',sys:'Platform',err:'Error'};
+const other=a=>a==='claude'?'gpt':'claude';
+
+// ---------- persistence of keys ----------
+try{const k=JSON.parse(localStorage.getItem("reasonfusion")||'null');if(k){$('akey').value=k.a||'';$('okey').value=k.o||'';$('amodel').value=k.am||$('amodel').value;$('omodel').value=k.om||$('omodel').value;$('mail').value=k.m||'';$('remember').checked=true}}catch(e){}
+function saveKeys(){try{if($('remember').checked)localStorage.setItem("reasonfusion",JSON.stringify({a:$('akey').value,o:$('okey').value,am:$('amodel').value,om:$('omodel').value,m:$('mail').value}));else localStorage.removeItem("reasonfusion")}catch(e){}}
+
+// ---------- UI ----------
+function stage(i){$('stage').innerHTML=STAGES.map((s,j)=>`<span class="pill ${j<i?'done':j===i?'on':''}">${j<i?'✓ ':''}${s}</span>`).join('')}
+function post(who,title,text,collapse){
+  const e=$('log').querySelector('.empty');if(e)e.remove();
+  const d=document.createElement('div');d.className='msg '+who+(collapse?' collapsed':'');
+  d.innerHTML=`<div class="who"><span><b>${NAME[who]}</b> · ${esc(title)}</span>${collapse?'<button class="tog">Expand</button>':''}</div><div class="body">${md(text)}</div>`;
+  const b=d.querySelector('.tog');if(b)b.onclick=()=>{d.classList.toggle('collapsed');b.textContent=d.classList.contains('collapsed')?'Expand':'Collapse'};
+  $('log').appendChild(d);S&&S.log.push(`## ${NAME[who]} — ${title}\n\n${text}\n`);d.scrollIntoView({behavior:'smooth',block:'nearest'});return d;
+}
+function busy(who,title){const d=post(who,title,'');d.querySelector('.body').innerHTML='<span class="spin"></span> working…';S.log.pop();return d}
+function fill(d,text){d.querySelector('.body').innerHTML=md(text);S.log.push(`## ${d.querySelector('.who span').textContent}\n\n${text}\n`)}
+
+// ---------- model calls ----------
+async function callClaude(system,prompt,max=6000){
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal:ctl.signal,headers:{'content-type':'application/json','x-api-key':$('akey').value.trim(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:$('amodel').value.trim(),max_tokens:max,system,messages:[{role:'user',content:prompt}]})});
+  const j=await r.json();if(!r.ok)throw new Error('Claude: '+(j.error?.message||r.status));
+  return j.content.filter(c=>c.type==='text').map(c=>c.text).join('\n');
+}
+async function callGPT(system,prompt){
+  const r=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',signal:ctl.signal,headers:{'content-type':'application/json',authorization:'Bearer '+$('okey').value.trim()},
+    body:JSON.stringify({model:$('omodel').value.trim(),messages:[{role:'system',content:system},{role:'user',content:prompt}]})});
+  const j=await r.json();if(!r.ok)throw new Error('ChatGPT: '+(j.error?.message||r.status));
+  return j.choices[0].message.content||'';
+}
+const ask=(who,sys,p)=>who==='claude'?callClaude(sys,p):callGPT(sys,p);
+function jsonFrom(t){const m=t.match(/\[[\s\S]*\]/);if(!m)return[];try{return JSON.parse(m[0])}catch(e){return[]}}
+
+// ---------- scholarly databases ----------
+const mailQ=()=>$('mail').value.trim()?'mailto='+encodeURIComponent($('mail').value.trim()):'';
+const norm=s=>String(s||'').toLowerCase().replace(/<[^>]+>/g,'').replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(w=>w.length>2);
+function sim(a,b){const A=new Set(norm(a)),B=new Set(norm(b));if(!A.size||!B.size)return 0;let n=0;A.forEach(w=>{if(B.has(w))n++});return 2*n/(A.size+B.size)}
+function fromCrossref(w){return{title:(w.title||[''])[0],authors:(w.author||[]).map(a=>[a.given,a.family].filter(Boolean).join(' ')),year:(w.issued?.['date-parts']?.[0]?.[0])||(w.published?.['date-parts']?.[0]?.[0])||'',venue:(w['container-title']||[''])[0]||w.publisher||'',doi:w.DOI?.toLowerCase()||'',url:w.URL||'',src:'Crossref'}}
+function fromOA(w){let abs='';if(w.abstract_inverted_index){const a=[];for(const[k,v]of Object.entries(w.abstract_inverted_index))v.forEach(i=>a[i]=k);abs=a.join(' ')}
+  return{title:w.display_name||w.title||'',authors:(w.authorships||[]).map(a=>a.author?.display_name).filter(Boolean),year:w.publication_year||'',venue:w.primary_location?.source?.display_name||'',doi:(w.doi||'').replace('https://doi.org/','').toLowerCase(),url:w.doi||w.id,abstract:abs,cites:w.cited_by_count||0,src:'OpenAlex'}}
+async function getJSON(u){const r=await fetch(u,{signal:ctl.signal});if(!r.ok)throw new Error(r.status);return r.json()}
+async function crossrefDOI(doi){try{const j=await getJSON(`https://api.crossref.org/works/${encodeURIComponent(doi)}?${mailQ()}`);return fromCrossref(j.message)}catch(e){return null}}
+async function openalexSearch(q,n=6){try{const j=await getJSON(`https://api.openalex.org/works?search=${encodeURIComponent(q)}&per-page=${n}&${mailQ()}`);return j.results.map(fromOA)}catch(e){return[]}}
+async function verify(c){ // returns {ok, rec, why}
+  const t=c.title||'';
+  if(c.doi){const doi=String(c.doi).replace(/^https?:\/\/(dx\.)?doi\.org\//,'').trim();const r=await crossrefDOI(doi);
+    if(r&&(!t||sim(r.title,t)>=.75))return{ok:true,rec:r};if(r)return{ok:false,why:`DOI resolves to a different paper: "${r.title}"`}}
+  if(!t)return{ok:false,why:'no title or DOI'};
+  try{const j=await getJSON(`https://api.crossref.org/works?query.bibliographic=${encodeURIComponent(t+' '+(c.authors?.[0]||c.author||''))}&rows=3&${mailQ()}`);
+    for(const w of j.message.items){const r=fromCrossref(w);if(sim(r.title,t)>=.85&&(!c.year||!r.year||Math.abs(+c.year-+r.year)<=1))return{ok:true,rec:r}}}catch(e){}
+  for(const r of await openalexSearch(t,3))if(sim(r.title,t)>=.85)return{ok:true,rec:r};
+  return{ok:false,why:'no matching record in Crossref or OpenAlex'};
+}
+const key=r=>r.doi||norm(r.title).join(' ');
+function addRef(r){const k=key(r);if(S.refs.some(x=>key(x)===k))return;S.refs.push(r)}
+const refLine=(r,i)=>`[R${i+1}] ${r.authors.slice(0,4).join(', ')}${r.authors.length>4?' et al.':''} (${r.year}). ${r.title}. ${r.venue}.${r.doi?' doi:'+r.doi:''}${r.abstract?'\n   Abstract: '+r.abstract.slice(0,700):''}`;
+const litBlock=()=>S.refs.length?S.refs.map(refLine).join('\n'):'(no literature found)';
+
+// ---------- prompts ----------
+const SYS=(who)=>`You are ${NAME[who]}, acting as a senior expert researcher in ${S.field}. You are collaborating with ${NAME[other(who)]}, another AI model, on a hard research problem posed by a human researcher.
+Rules: be rigorous and concrete (assumptions, formal definitions, algorithms, proofs or proof sketches, complexity, threat models, quantitative estimates where relevant). When critiquing, be specific and honest: name errors, gaps and unjustified claims, and concede points that are correct. Do not agree just to be agreeable.
+Never invent citations, datasets, experiments or results. You may cite ONLY the verified literature below, using its [R#] tag. If a claim needs a source not in the list, write "(source needed)".`;
+const CTX=()=>`PROBLEM:\n${S.problem}\n\nVERIFIED LITERATURE:\n${litBlock()}`;
+
+// ---------- pipeline ----------
+async function run(){
+  S={problem:$('problem').value.trim(),field:$('field').value.trim()||'the relevant field',rounds:Math.max(1,Math.min(8,+$('rounds').value||4)),writer:$('writer').value,refs:[],rejected:[],log:[],pos:{}};
+  if(!S.problem){post('err','Missing input','Please enter a problem.');return}
+  if(!$('akey').value.trim()||!$('okey').value.trim()){post('err','Missing keys','Both an Anthropic and an OpenAI API key are needed.');return}
+  saveKeys();ctl=new AbortController();$('go').disabled=true;$('stop').disabled=false;$('log').innerHTML='';$('paperWrap').style.display='none';
+  try{
+    // 1. Literature
+    stage(0);let d=busy('sys','Searching the literature');
+    for(const doi of $('dois').value.split(/\s+/).filter(Boolean)){const r=await crossrefDOI(doi.replace(/^https?:\/\/(dx\.)?doi\.org\//,''));if(r){const oa=await openalexSearch(r.title,1);addRef(oa[0]&&sim(oa[0].title,r.title)>.85?{...r,abstract:oa[0].abstract}:r)}else S.rejected.push({title:doi,why:'DOI not found in Crossref'})}
+    const qs=jsonFrom(await callClaude('Return only a JSON array of strings.',`Give 5 diverse, precise scholarly search queries (3-8 words each) to find the most relevant prior work for this problem in ${S.field}:\n${S.problem}`,800)).slice(0,6);
+    for(const q of qs){for(const r of await openalexSearch(q,5))if(r.title)addRef(r)}
+    S.refs=S.refs.slice(0,30);
+    fill(d,`Queries: ${qs.map(q=>'*'+q+'*').join(' · ')}\n\nFound **${S.refs.length}** real works (with abstracts where available). Both models get this list as shared literature.\n\n${S.refs.map((r,i)=>`- [R${i+1}] ${r.title} (${r.year})`).join('\n')}`);
+
+    // 2. Debate
+    stage(1);
+    for(let k=1;k<=S.rounds;k++){
+      const prev={...S.pos};
+      const outs=await Promise.all(['claude','gpt'].map(async who=>{
+        const dd=busy(who,`Round ${k}`);
+        const p=k===1?`${CTX()}\n\nRound 1: propose your best full solution, independently. Structure it clearly. End with one line: CONFIDENCE: <0-100>.`
+          :`${CTX()}\n\nYOUR PREVIOUS SOLUTION:\n${prev[who]}\n\n${NAME[other(who)].toUpperCase()}'S LATEST SOLUTION:\n${prev[other(who)]}\n\nRound ${k}:\n1. Critique ${NAME[other(who)]}'s solution point by point (correctness, rigor, completeness, feasibility).\n2. Acknowledge valid weaknesses in your own.\n3. Give your full revised solution, adopting the strongest ideas from both.\nEnd with two lines:\nOPEN ISSUES: <none, or a short list>\nAGREEMENT: yes|no  (yes only if both solutions now agree on the essentials and no major issue remains)`;
+        const t=await ask(who,SYS(who),p);fill(dd,t);dd.classList.add('collapsed');
+        const b=document.createElement('button');b.className='tog';b.textContent='Expand';b.onclick=()=>{dd.classList.toggle('collapsed');b.textContent=dd.classList.contains('collapsed')?'Expand':'Collapse'};dd.querySelector('.who').appendChild(b);
+        return[who,t]}));
+      outs.forEach(([w,t])=>S.pos[w]=t);
+      const agreed=k>1&&outs.every(([,t])=>/AGREEMENT:\s*\**\s*yes/i.test(t));
+      if(agreed){post('sys','Consensus',`Both models report agreement after round ${k}.`);break}
+      if(k===S.rounds)post('sys','Round limit',`Stopped after ${k} rounds. Any open disagreements will be carried into the paper's discussion section.`);
+    }
+
+    // 3. Extra references proposed by models, verified
+    stage(2);d=busy('sys','Verifying extra references proposed by the models');
+    const cand=[];for(const who of ['claude','gpt']){const t=await ask(who,'Return only a JSON array.',`For a paper on the solution below, list up to 8 ADDITIONAL key references NOT already in the verified list that you are highly confident exist. Include the DOI if you know it. Format: [{"title":"","authors":[""],"year":2020,"doi":""}]\n\nAlready included:\n${S.refs.map(r=>r.title).join('\n')}\n\nSolution:\n${S.pos[who].slice(0,6000)}`);jsonFrom(t).forEach(c=>cand.push({...c,by:who}))}
+    let okN=0;for(const c of cand){const v=await verify(c);if(v.ok){const n=S.refs.length;addRef(v.rec);if(S.refs.length>n)okN++}else S.rejected.push({title:c.title||c.doi,why:v.why,by:c.by})}
+    fill(d,`Models proposed **${cand.length}** references. **${okN}** new ones verified and added. **${S.rejected.length}** rejected as unverifiable or mismatched:\n\n${S.rejected.map(r=>`- ~~${r.title}~~ (${r.by?NAME[r.by]+': ':''}${r.why})`).join('\n')||'- none'}`);
+
+    // 4. Draft
+    stage(3);const W=S.writer,R=other(W);
+    const brief=`${CTX()}\n\nFINAL ${NAME.claude.toUpperCase()} POSITION:\n${S.pos.claude}\n\nFINAL ${NAME.gpt.toUpperCase()} POSITION:\n${S.pos.gpt}`;
+    const paperRules=`Write a complete research paper in Markdown: # Title, **Abstract**, then ## 1 Introduction (with explicit contributions), ## 2 Related Work, ## 3 Problem Formulation / System and Threat Model, ## 4 Proposed Approach, ## 5 Analysis (formal analysis; if no experiments were actually run, say so plainly and give an evaluation plan instead; NEVER invent numbers), ## 6 Discussion and Limitations (including any unresolved disagreements between the two models), ## 7 Conclusion.
+Cite ONLY as [R#] from the verified list, and only where the source actually supports the claim based on its title/abstract. Do NOT write a References section; the platform adds it. Use LaTeX math between $…$ where needed.`;
+    d=busy(W,'Drafting the paper (lead author)');let paper=await ask(W,SYS(W),`${brief}\n\n${paperRules}`);fill(d,paper);d.classList.add('collapsed');
+
+    // 5. Review
+    stage(4);d=busy(R,'Peer review of the draft');
+    const review=await ask(R,SYS(R),`${CTX()}\n\nAct as a demanding peer reviewer (top venue in ${S.field}). Review this draft: technical errors, unsupported claims, citations used for claims their source does not support, missing related work from the list, clarity. Give a numbered list of required changes.\n\nDRAFT:\n${paper}`);fill(d,review);
+
+    // 6. Revise
+    stage(5);d=busy(W,'Revising after review');
+    paper=await ask(W,SYS(W),`${CTX()}\n\nRevise the paper to address the review. Return the FULL revised paper only.\n${paperRules}\n\nDRAFT:\n${paper}\n\nREVIEW:\n${review}`);fill(d,paper);d.classList.add('collapsed');
+
+    // 7. Citation verification + reference list
+    stage(6);finalize(paper);stage(7);
+  }catch(e){post('err',e.name==='AbortError'?'Stopped':'Run failed',e.name==='AbortError'?'Stopped by you.':String(e.message||e)+'\n\nCheck your keys and model names. Open this page from a normal browser tab, not a sandboxed preview.')}
+  finally{$('go').disabled=false;$('stop').disabled=true}
+}
+
+function finalize(paper){
+  const order=[],bad=new Set();
+  let body=paper.replace(/^#+\s*References[\s\S]*$/im,'').trim();
+  body=body.replace(/\[R(\d+)((?:\s*,\s*R?\d+)*)\]/g,(m,a,rest)=>{
+    const ids=[a,...(rest.match(/\d+/g)||[])].map(Number);const out=[];
+    for(const i of ids){if(!S.refs[i-1]){bad.add(i);continue}let p=order.indexOf(i);if(p<0){order.push(i);p=order.length-1}out.push(p+1)}
+    return out.length?'['+out.join(', ')+']':'[citation needed]'});
+  const used=order.map(i=>S.refs[i-1]);
+  const refsMd=used.map((r,k)=>`${k+1}. ${r.authors.slice(0,6).join(', ')}${r.authors.length>6?', et al.':''} (${r.year}). *${r.title}*. ${r.venue}.${r.doi?` https://doi.org/${r.doi}`:r.url?' '+r.url:''}`).join('\n');
+  S.paper=`${body}\n\n## AI Assistance Statement\n\nThis manuscript was drafted by two large language models (Claude, ${$('amodel').value}; ChatGPT, ${$('omodel').value}) through a structured critique-and-revision process, and must be checked, edited and taken responsibility for by the human authors before submission.\n\n## References\n\n${refsMd||'_No references were cited._'}\n`;
+  S.used=used;
+  $('paper').innerHTML=md(S.paper);$('paperWrap').style.display='block';
+  post('sys','Citation check',`- **${used.length}** references cited, all matched to Crossref or OpenAlex records. Metadata comes from those databases, not from the models.\n- **${bad.size}** invalid citation tags replaced with *[citation needed]*${bad.size?` (R${[...bad].join(', R')})`:''}.\n- **${S.rejected.length}** model-suggested references were rejected earlier.\n\n**Still up to you:** these checks show each source exists. They don't show it supports the sentence where it's cited. Read every cited source before you submit.`);
+  $('paperWrap').scrollIntoView({behavior:'smooth'});
+}
+
+function bib(){return S.used.map((r,i)=>{const k=(norm(r.authors[0]||'anon').slice(-1)[0]||'ref')+r.year+(norm(r.title)[0]||'')+i;
+  return`@article{${k},\n  title={${r.title}},\n  author={${r.authors.join(' and ')}},\n  journal={${r.venue}},\n  year={${r.year}}${r.doi?`,\n  doi={${r.doi}}`:''}\n}`}).join('\n\n')}
+function dl(name,text){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'}));a.download=name;document.body.appendChild(a);a.click();a.remove()}
+
+$('go').onclick=run;
+$('stop').onclick=()=>ctl&&ctl.abort();
+$('cpy').onclick=async()=>{try{await navigator.clipboard.writeText(S.paper);$('cpy').textContent='Copied'}catch(e){$('cpy').textContent='Copy failed'}setTimeout(()=>$('cpy').textContent='Copy Markdown',1500)};
+$('dlmd').onclick=()=>dl('paper.md',S.paper);
+$('dlbib').onclick=()=>dl('references.bib',bib());
+$('dllog').onclick=()=>dl('transcript.md',`# ReasonFusion transcript\n\n${S.log.join('\n')}`);
+stage(-1);
+}
+</script>
+</body>

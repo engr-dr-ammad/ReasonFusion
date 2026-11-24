@@ -1,0 +1,13 @@
+{
+  "name": "ReasonFusion",
+  "short_name": "ReasonFusion",
+  "description": "Claude and ChatGPT debate a research problem and co-write a paper with verified citations.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f6f2",
+  "theme_color": "#1b1d21",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

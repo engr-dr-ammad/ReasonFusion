@@ -7,7 +7,7 @@ Claude and ChatGPT work through a hard research problem together. They debate it
 ## How it works
 
 1. **Literature.** Claude writes search queries, and the app pulls real papers with their abstracts from [OpenAlex](https://openalex.org). Any DOIs you supply are resolved through [Crossref](https://www.crossref.org).
-2. **Debate.** In each round, both models solve the problem on their own, then critique the other's latest solution and revise their own. The debate ends when both report `AGREEMENT: yes` or the round limit is reached.
+2. **Live debate.** Claude opens, then the two take turns replying to each other while you watch the text stream in. Each turn critiques the other's latest message and refines the solution. The debate ends when both report `AGREEMENT: yes` in consecutive turns or the round limit is reached.
 3. **Extra references.** Each model suggests more sources. A suggestion is kept only if its DOI or title matches a Crossref or OpenAlex record. Everything else is rejected and listed.
 4. **Draft, review, revise.** The lead author drafts the paper, the other model peer-reviews it, and the lead author revises.
 5. **Citation check.** Citations can point only to verified sources, and any invalid tag becomes `[citation needed]`. The reference list is built from database metadata, never from model output. The app adds an AI assistance statement.
